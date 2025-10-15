@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seasons and Episodes</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1a1a1a;
+            color: #ffffff;
+            line-height: 1.6;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        
+        @media (min-width: 768px) {
+            .container {
+                grid-template-columns: 1fr 400px;
+            }
+        }
+        
+        /* Video Player Styles */
+        .video-player-container {
+            position: sticky;
+            top: 20px;
+            background: #2d2d2d;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            margin-bottom: 20px;
+        }
+        
+        .player-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .player-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #ff4444;
+        }
+        
+        .close-btn {
+            background: #ff4444;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+        
+        .close-btn:hover {
+            background: #cc0000;
+        }
+        
+        .video-player video {
+            width: 100%;
+            height: auto;
+            border-radius: 10px;
+            background: #000;
+        }
+    
+        /* Content Area */
+        .content-area {
+            background: #2d2d2d;
+            border-radius: 15px;
+            padding: 20px;
+        }
+        
+        .image-placeholder {
+            text-align: center;
+            margin: 20px 0;
+            padding: 1px 1px;
+            background: linear-gradient(135deg, #333, #555);
+            border: 2px dashed #666;
+            border-radius: 10px;
+            color: #ccc;
+        }
+        
+        .image-placeholder h3 {
+            margin-bottom: 10px;
+            color: #ff4444;
+        }
+        
+        /* Seasons Styles */
+        .season-section {
+            background: #3a3a3a;
+            margin: 25px 0;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+        
+        .season-title {
+            background: linear-gradient(135deg, #ff4444, #cc0000);
+            color: white;
+            padding: 18px 25px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 20px;
+            transition: all 0.3s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .season-title:hover {
+            background: linear-gradient(135deg, #ff5555, #dd0000);
+            transform: translateY(-2px);
+        }
+        
+        .season-title::after {
+            content: '▼';
+            font-size: 14px;
+            transition: transform 0.3s;
+        }
+        
+        .season-title.active::after {
+            transform: rotate(180deg);
+        }
+        
+        .episodes-container {
+            display: none;
+            padding: 15px;
+            background: #2d2d2d;
+        }
+        
+        .episodes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 12px;
+            margin-top: 10px;
+        }
+        
+        .episode {
+            background: #4a4a4a;
+            padding: 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+        
+        .episode:hover {
+            background: #5a5a5a;
+            transform: translateY(-3px);
+            border-color: #ff4444;
+            box-shadow: 0 4px 12px rgba(255, 68, 68, 0.3);
+        }
+        
+        .episode.active {
+            background: #ff4444;
+            border-color: #ff4444;
+            transform: scale(1.05);
+        }
+        
+        .episode-number {
+            font-size: 12px;
+            color: #ccc;
+            margin-bottom: 5px;
+        }
+        
+        .episode-title {
+            font-size: 14px;
+            font-weight: bold;
+        }
+        
+        /* Mobile Responsive */
+        @media (max-width: 767px) {
+            .episodes-grid {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+                gap: 10px;
+            }
+            
+            .season-title {
+                padding: 15px 20px;
+                font-size: 18px;
+            }
+            
+            .video-player-container {
+                position: relative;
+                top: 0;
+            }
+        }
+        
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #2d2d2d;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #ff4444;
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #cc0000;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Video Player Section -->
+        <div class="video-player-container" id="videoPlayerContainer" style="display: none;">
+            <div class="player-header">
+                <div class="player-title" id="currentEpisodeTitle">Now Playing</div>
+                <button class="close-btn" onclick="hideVideoPlayer()">Close</button>
+            </div>
+            <div class="video-player">
+                <video controls playsinline id="currentVideo">
+                    Your browser does not support HTML5 video.
+                </video>
+            </div>
+        </div>
+
+        <!-- Content Area -->
+        <div class="content-area">
+            <!-- Image Placeholder -->
+    <div class="image-placeholder">
+    <img src="https://m.media-amazon.com/images/M/MV5BMjg2NmM0MTEtYWY2Yy00NmFlLTllNTMtMjVkZjEwMGVlNzdjXkEyXkFqcGc@._V1_.jpg" alt="تصویر کی وضاحت" style="width: 100%; border-radius: 10px;">
+    </div>
+
+            <!-- Season 1 -->
+            <div class="season-section">
+                <div class="season-title" onclick="toggleSeason('season1')">
+                    Season 1
+                </div>
+                <div id="season1" class="episodes-container">
+                    <div class="episodes-grid">
+                        <div class="episode" onclick="playEpisode(this, 'https://www.febspot.com/get_file/5/5253d77179475f277c7cd013e0718949/2606000/2606186/2606186_720p.mp4', 'Season 1 Episode 1')">
+                            <div class="episode-number">EP 1</div>
+                            <div class="episode-title">Episode 1</div>
+                        </div>
+                        <div class="episode" onclick="playEpisode(this, 'https://www.febspot.com/get_file/5/2d98bfc5fa7a8700bf33d1493fc18620/2606000/2606192/2606192_720p.mp4', 'Season 1 Episode 2')">
+                            <div class="episode-number">EP 2</div>
+                            <div class="episode-title">Episode 2</div>
+                        </div>
+                        <div class="episode" onclick="playEpisode(this, 'https://www.febspot.com/get_file/5/839b033479fd6eee92dbd0945f208586/2606000/2606193/2606193_720p.mp4', 'Season 1 Episode 3')">
+                            <div class="episode-number">EP 3</div>
+                            <div class="episode-title">Episode 3</div>
+                        </div>
+                        <div class="episode" onclick="playEpisode(this, 'https://www.febspot.com/get_file/5/2cf6adfcd5926bbb2f0ce156ddaf717d/2606000/2606196/2606196_720p.mp4', 'Season 1 Episode 4')">
+                            <div class="episode-number">EP 4</div>
+                            <div class="episode-title">Episode 4</div>
+                        </div>
+                        <div class="episode" onclick="playEpisode(this, 'https://www.febspot.com/get_file/5/764e9b7de9eb1f49990d69aaa68c9782/2606000/2606199/2606199_720p.mp4', 'Season 1 Episode 5')">
+                            <div class="episode-number">EP 5</div>
+                            <div class="episode-title">Episode 5</div>
+                        </div>
+                        <div class="episode" onclick="playEpisode(this, ''https://www.febspot.com/get_file/5/c3ecc9a269a3139f41a4edd10667bd71/2606000/2606202/2606202_720p.mp4, 'Season 1 Episode 6')">
+                            <div class="episode-number">EP 6</div>
+                            <div class="episode-title">Episode 6</div>
+                        </div>
+                        <div class="episode" onclick="playEpisode(this, 'https://www.febspot.com/get_file/5/596bb437fa6f54b661434dfd1ce9e3b7/2606000/2606208/2606208_720p.mp4', 'Season 1 Episode 7')">
+                            <div class="episode-number">EP 7</div>
+                            <div class="episode-title">Episode 7</div>
+                        </div>
+                        <div class="episode" onclick="playEpisode(this, 'https://www.febspot.com/get_file/5/249ef0d29ec8bef3a460ec55ec692eea/2606000/2606220/2606220_720p.mp4', 'Season 1 Episode 8')">
+                            <div class="episode-number">EP 8</div>
+                            <div class="episode-title">Episode 8</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Season 2 -->
+            <div class="season-section">
+                <div class="season-title" onclick="toggleSeason('season2')">
+                    Season 2
+                </div>
+                <div id="season2" class="episodes-container">
+                    <div class="episodes-grid">
+<div class="episode" onclick="playEpisode(this, 'https://www.febspot.com/get_file/30/26034462d41b9f7720c7d636b5076458/2954000/2954028/2954028_720p.mp4', 'Season 2 Episode 1')">
+    <div class="episode-number">EP 1</div>
+    <div class="episode-title">Episode 1</div>
+</div>
+
+<div class="episode" onclick="playEpisode(this, 'https://www.febspot.com/get_file/30/b78ad2715e9256d644192544e584afbe/2954000/2954081/2954081_720p.mp4', 'Season 2 Episode 2')">
+    <div class="episode-number">EP 2</div>
+    <div class="episode-title">Episode 2</div>
+</div>
+
+<div class="episode" onclick="playEpisode(this, 'https://www.febspot.com/get_file/30/749df5d3daf45866eecf6166a40454e5/2954000/2954084/2954084_720p.mp4', 'Season 2 Episode 3')">
+    <div class="episode-number">EP 3</div>
+    <div class="episode-title">Episode 3</div>
+</div>
+
+<div class="episode" onclick="playEpisode(this, 'https://www.febspot.com/get_file/30/2f38a1216bc67c18187240ccdf94d982/2954000/2954041/2954041_720p.mp4', 'Season 2 Episode 4')">
+    <div class="episode-number">EP 4</div>
+    <div class="episode-title">Episode 4</div>
+</div>
+
+<div class="episode" onclick="playEpisode(this, 'https://www.febspot.com/get_file/30/4f77d45084c6938bafe3175ad2ffa874/2954000/2954085/2954085_720p.mp4', 'Season 2 Episode 5')">
+    <div class="episode-number">EP 5</div>
+    <div class="episode-title">Episode 5</div>
+</div>
+
+<div class="episode" onclick="playEpisode(this, 'https://www.febspot.com/get_file/30/a6e0674a40a392a411644c6efa1610af/2954000/2954089/2954089_720p.mp4', 'Season 2 Episode 6')">
+    <div class="episode-number">EP 6</div>
+    <div class="episode-title">Episode 6</div>
+</div>
+
+<div class="episode" onclick="playEpisode(this, 'https://www.febspot.com/get_file/30/69b2f9bcc1f8212b287d4ddd4657f500/2954000/2954030/2954030_720p.mp4', 'Season 2 Episode 7')">
+    <div class="episode-number">EP 7</div>
+    <div class="episode-title">Episode 7</div>
+</div>
+
+<div class="episode" onclick="playEpisode(this, 'https://www.febspot.com/get_file/30/43e0c090d9fbce20a1dc56cc47b17ef7/2954000/2954042/2954042_720p.mp4', 'Season 2 Episode 8')">
+    <div class="episode-number">EP 8</div>
+    <div class="episode-title">Episode 8</div>
+</div>
+
+<div class="episode" onclick="playEpisode(this, ''#, 'Season 2 Episode 9')">
+    <div class="episode-number">EP 9</div>
+    <div class="episode-title">Episode 9</div>
+</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Season 3 -->
+            <div class="season-section">
+                <div class="season-title" onclick="toggleSeason('season3')">
+                    Season 3
+                </div>
+                <div id="season3" class="episodes-container">
+                    <div class="episodes-grid">
+                        <div class="episode" onclick="playEpisode(this, 'https://www.febspot.com/get_file/30/90522594fb0408e9ff12297d908e36e1/2955000/2955013/2955013_720p.mp4', 'Season 3 Episode 1')">
+                            <div class="episode-number">EP 1</div>
+                            <div class="episode-title">Episode 1</div>
+                        </div>
+                        <div class="episode" onclick="playEpisode(this, 'https://www.febspot.com/get_file/30/97d1470b621835abdcf2e654459e06d0/2955000/2955014/2955014_720p.mp4', 'Season 3 Episode 2')">
+                        <div class="episode-number">EP 2</div>
+                        <div class="episode-title">Episode 2</div>
+                        </div>
+                        <div class="episode" onclick="playEpisode(this, 'https://www.febspot.com/get_file/30/47ff8d4b46f106a1ba595e93544f4651/2955000/2955015/2955015_720p.mp4', 'Season 3 Episode 3')">
+                        <div class="episode-number">EP 3</div>
+                        <div class="episode-title">Episode 3</div>
+                        </div>
+                        <div class="episode" onclick="playEpisode(this, 'https://www.febspot.com/get_file/30/3381c8c1095fb0b60e330b8577076638/2955000/2955016/2955016_720p.mp4', 'Season 3 Episode 4')">
+                        <div class="episode-number">EP 4</div>
+                        <div class="episode-title">Episode 4</div>
+                        </div>
+                        <div class="episode" onclick="playEpisode(this, 'https://www.febspot.com/get_file/30/fbb573d7b240613e0ee2617e68425795/2955000/2955017/2955017_720p.mp4', 'Season 3 Episode 5')">
+                        <div class="episode-number">EP 5</div>
+                        <div class="episode-title">Episode 5</div>
+                        </div>
+                        <div class="episode" onclick="playEpisode(this, 'https://www.febspot.com/get_file/30/731975d9f1436ca3076f3f790c4a9ccb/2955000/2955043/2955043_720p.mp4', 'Season 3 Episode 6')">
+                        <div class="episode-number">EP 6</div>
+                        <div class="episode-title">Episode 6</div>
+                        </div>
+                        <div class="episode" onclick="playEpisode(this, 'https://www.febspot.com/get_file/30/4c8244b964653fe06698f0f0da31cc00/2955000/2955045/2955045_720p.mp4', 'Season 3 Episode 7')">
+                        <div class="episode-number">EP 7</div>
+                        <div class="episode-title">Episode 7</div>
+                        </div>
+                        <div class="episode" onclick="playEpisode(this, 'https://www.febspot.com/get_file/30/22dc57a1cb748e2b7c2f2dcdec4fa9d2/2955000/2955047/2955047_720p.mp4', 'Season 3 Episode 8')">
+                        <div class="episode-number">EP 8</div>
+                        <div class="episode-title">Episode 8</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Season 4 -->
+            <div class="season-section">
+                <div class="season-title" onclick="toggleSeason('season4')">
+                    Season 4
+                </div>
+                <div id="season4" class="episodes-container">
+                    <div class="episodes-grid">
+                        <div class="episode" onclick="playEpisode(this, 'https://www.febspot.com/get_file/30/aa5a16ebaf3ab8d67480663a707e43f9/2955000/2955606/2955606_720p.mp4', 'Season 4 Episode 1')">
+                            <div class="episode-number">EP 1</div>
+                            <div class="episode-title">Episode 1</div>
+                        </div>
+                        <div class="episode" onclick="playEpisode(this, 'https://www.febspot.com/get_file/30/19e42fc260fdfeeba72cf99cf8fcb063/2955000/2955609/2955609_720p.mp4', 'Season 4 Episode 2')">
+                        <div class="episode-number">EP 2</div>
+                        <div class="episode-title">Episode 2</div>
+                        </div>
+                        <div class="episode" onclick="playEpisode(this, 'https://www.febspot.com/get_file/30/f3a5c2facc66847d20343dc7cbb007ef/2955000/2955620/2955620_720p.mp4', 'Season 4 Episode 3')">
+                        <div class="episode-number">EP 3</div>
+                        <div class="episode-title">Episode 3</div>
+                        </div>
+                        <div class="episode" onclick="playEpisode(this, '#', 'Season 4 Episode 4')">
+                        <div class="episode-number">EP 4</div>
+                        <div class="episode-title">Episode 4</div>
+                        </div>
+                        <div class="episode" onclick="playEpisode(this, 'https://www.febspot.com/get_file/30/ae16ffe0f677ab4e66e891661877bcb2/2955000/2955626/2955626_720p.mp4', 'Season 4 Episode 5')">
+                        <div class="episode-number">EP 5</div>
+                        <div class="episode-title">Episode 5</div>
+                        </div>        
+                        <div class="episode" onclick="playEpisode(this, 'https://www.febspot.com/get_file/30/5223b1a5340aea577122f29afe3d112d/2955000/2955628/2955628_720p.mp4', 'Season 4 Episode 6')">
+                        <div class="episode-number">EP 6</div>
+                        <div class="episode-title">Episode 6</div>
+                        </div>
+                        <div class="episode" onclick="playEpisode(this, 'https://www.febspot.com/get_file/30/3381682ed49215f804c6a5693aecc98f/2955000/2955772/2955772_720p.mp4', 'Season 4 Episode 7')">
+                        <div class="episode-number">EP 7</div>
+                        <div class="episode-title">Episode 7</div>
+                        </div>
+                        <div class="episode" onclick="playEpisode(this, 'https://www.febspot.com/get_file/30/b22b0583b02ce52561e71d81baed5ac1/2955000/2955779/2955779_720p.mp4', 'Season 4 Episode 8')">
+                        <div class="episode-number">EP 8</div>
+                        <div class="episode-title">Episode 8</div>
+                        </div>
+                        <div class="episode" onclick="playEpisode(this, 'https://www.febspot.com/get_file/30/5e069ccaceb942ecb943d3db272a5dd5/2955000/2955793/2955793_720p.mp4', 'Season 4 Episode 9')">
+                        <div class="episode-number">EP 9</div>
+                        <div class="episode-title">Episode 9</div>
+                       </div>      
+                    </div>        
+                 </div>
+             </div>
+                
+            <!-- Season 5 -->
+            <div class="season-section">
+            <div class="season-title" onclick="toggleSeason('season5')">
+            Season 5
+            </div>
+            <div id="season5" class="episodes-container">
+            <div class="episodes-grid">
+            <div class="episode" onclick="playEpisode(this, 'https://www.febspot.com/get_file/30/aa37cee36017136ab59ddf066cc48f42/2960000/2960748/2960748_720p.mp4', 'Season 5 Trailer')">
+            <div class="episode-number">Trailer</div>
+            <div class="episode-title">Trailer</div>
+            </div>
+          </div>
+         </div>
+      </div>
+      </div>
+      </div>
+   </div>
+   
+        <br>
+        <br>
+        <h1>Stranger Things All Seasons Watch Online & Download (Season 5 Added)</h1>
+
+    <script>
+        let currentPlayingVideo = null;
+        let currentActiveEpisode = null;
+        
+        function toggleSeason(seasonId) {
+            const season = document.getElementById(seasonId);
+            const seasonTitle = season.previousElementSibling;
+            
+            if (season.style.display === 'block') {
+                season.style.display = 'none';
+                seasonTitle.classList.remove('active');
+            } else {
+                // Close all other seasons
+                const allSeasons = document.querySelectorAll('.episodes-container');
+                const allTitles = document.querySelectorAll('.season-title');
+                
+                allSeasons.forEach(s => {
+                    if (s.id !== seasonId) {
+                        s.style.display = 'none';
+                    }
+                });
+                
+                allTitles.forEach(title => {
+                    if (title !== seasonTitle) {
+                        title.classList.remove('active');
+                    }
+                });
+                
+                season.style.display = 'block';
+                seasonTitle.classList.add('active');
+            }
+        }
+        
+        function playEpisode(episodeElement, videoUrl, episodeTitle) {
+            // Stop currently playing video
+            if (currentPlayingVideo) {
+                currentPlayingVideo.pause();
+                currentPlayingVideo.currentTime = 0;
+            }
+            
+            // Remove active class from previous episode
+            if (currentActiveEpisode) {
+                currentActiveEpisode.classList.remove('active');
+            }
+            
+            // Add active class to current episode
+            episodeElement.classList.add('active');
+            currentActiveEpisode = episodeElement;
+            
+            // Show video player
+            const videoPlayerContainer = document.getElementById('videoPlayerContainer');
+            const videoElement = document.getElementById('currentVideo');
+            const titleElement = document.getElementById('currentEpisodeTitle');
+            
+            // Set episode title
+            titleElement.textContent = episodeTitle;
+            
+            // Set video source
+            if (videoUrl !== '#') {
+                videoElement.src = videoUrl;
+                videoPlayerContainer.style.display = 'block';
+                
+                // Load and play video
+                videoElement.load();
+                videoElement.play();
+                currentPlayingVideo = videoElement;
+                
+                // Scroll to top to show video player
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else {
+                alert('Video link will be added later');
+            }
+        }
+        
+        function hideVideoPlayer() {
+            const videoPlayerContainer = document.getElementById('videoPlayerContainer');
+            const videoElement = document.getElementById('currentVideo');
+            
+            if (videoElement) {
+                videoElement.pause();
+                videoElement.currentTime = 0;
+                currentPlayingVideo = null;
+            }
+            
+            if (currentActiveEpisode) {
+                currentActiveEpisode.classList.remove('active');
+                currentActiveEpisode = null;
+            }
+            
+            videoPlayerContainer.style.display = 'none';
+        }
+        
+        // Hide video player when video ends
+        document.getElementById('currentVideo').addEventListener('ended', function() {
+            if (currentActiveEpisode) {
+                currentActiveEpisode.classList.remove('active');
+                currentActiveEpisode = null;
+            }
+        });
+        
+        // Auto-hide video player on mobile when scrolling down
+        let lastScrollTop = 0;
+        window.addEventListener('scroll', function() {
+            if (window.innerWidth <= 767) {
+                const videoPlayerContainer = document.getElementById('videoPlayerContainer');
+                const st = window.pageYOffset || document.documentElement.scrollTop;
+                
+                if (st > lastScrollTop && st > 100) {
+                    // Scrolling down
+                    videoPlayerContainer.style.opacity = '0.7';
+                } else {
+                    // Scrolling up
+                    videoPlayerContainer.style.opacity = '1';
+                }
+                lastScrollTop = st <= 0 ? 0 : st;
+            }
+        });
+    </script>
+</body>
+</html>
